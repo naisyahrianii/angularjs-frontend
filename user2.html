@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Latihan Slim Framework & Client AngularJS</title>
+	<script src="js/jquery-1.12.0.min.js"></script>
+	<link href="bootstrap-3.3.51/css/bootstrap.css" rel="stylesheet"/>
+	<script src="bootstrap-3.3.51/js/bootstrap.min.js"></script>
+	<!-- load angularjs -->
+	<script src="angular/angular.js"></script>
+
+	<!-- load angular-growl -->
+	<link href="angular-growl/growl.css" rel="stylesheet">
+	<script src="angular-growl/growl.js"></script>
+	<script src="angular-growl/growlDirective.js"></script>
+	<script src="angular-growl/growlFactory.js"></script>
+</head>
+
+<body>
+
+	<div class="container" data-ng-app="coffeeshopApp" data-ng-controller="coffeeshopCtrl">
+
+		<h1>Data User</h1>
+		<br/>
+		<div class="col-sm-12">
+            <button type="button" class="btn btn-primary" data-ng-click="showForm('add');">Tambah User</button>
+            <button type="button" class="btn btn-primary"><a href="index.html" style="color: white;">List User</a></button>
+			<input type="textSearch" style="float:right; width:300px;" class="form-control" placeholder="Pencarian (Nama Barang)" data-ng-keyup="searchUser();" data-ng-model="keyword">
+		</div>
+		<br/><br/>
+
+		<table class="table" cellspacing="0" width="100%">
+			<thead>
+				<tr>
+                    <!-- <th>No.</th> -->
+                    <th>Id</th>
+					<th>Nama</th>
+                    <th>Username</th>
+                    <th>Pass</th>
+                    <th>Level</th>
+					<th colspan="2">Action</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr data-ng-repeat="user in data">
+					<td>{{ $index + 1 }}.</td>
+					<td>{{ user.nama }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.pass }}</td>
+                    <td>{{ user.level }}</td>
+					<td>
+						<button class="btn btn-warning" data-ng-click="showForm('edit',user.id, $index)">EDIT</button>
+						<button class="btn btn-danger" data-ng-click="deleteUser(user.id)">HAPUS</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<!-- Modal -->
+		<div class="modal fade" id="formModal" role="dialog">
+			<div class="modal-dialog">
+
+				<!-- Modal content-->
+				<form>
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<h4 class="modal-title">{{formActionTitle}}</h4>
+						</div>
+						<div class="modal-body">
+							<form role="form">
+								<div class="form-group">
+									<label>Nama  :</label>
+									<input type="text" class="form-control" data-ng-model="dataform.nama"/>
+									<input type="hidden" data-ng-model="dataform.id" />
+								</div>
+								<div class="form-group">
+									<label>Username :</label>
+									<input type="text" class="form-control" data-ng-model="dataform.username" />
+	                            </div>
+	                            <div class="form-group">
+									<label>Password :</label>
+									<input type="text" class="form-control" data-ng-model="dataform.pass" />
+	                            </div>
+	                            <div class="form-group">
+									<label>Level :</label>
+									<input type="text" class="form-control" data-ng-model="dataform.level" />
+	                            </div>
+							</form>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-success" data-ng-click="saveData()" data-ng-disabled="kunciTombol">Simpan</button>
+							<button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+						</div>
+					</div>
+				</form>
+				<!-- End of Modal content-->
+
+			</div>
+		</div>
+		<!-- End of Modal -->
+
+		<!-- Loading Animation -->
+		<div class="row-fluid" data-ng-if="loader">
+			<div style="text-align: center"><img src="image/loader.gif"/></div>
+		</div>
+
+		<!-- Angular-Growl Message -->
+		<div growl></div>
+
+	</div>
+
+
+</body>
+</html>
+
+<script>
+	var urlAPI = 'http://192.168.64.2/coba-slim';
+	// var urlAPI = 'http://localhost/coba-slim';
+
+	var coffeeshopApp = angular.module('coffeeshopApp', ['angular-growl']);
+
+	coffeeshopApp.controller('coffeeshopCtrl', function($scope, $http, growl) {
+		$scope.loader   = true;
+		$scope.form     = false;
+		$scope.dataform = {};
+
+		$scope.loadUser = function(){
+			$http.get(urlAPI+'/user')
+			.then(
+				function(response) {
+					$scope.data = response.data;
+					$scope.loader = false;
+				},
+				function (response) {
+					var error="Error : " + response.data.error.text;
+					$scope.showErrorMessage(error,0);
+				});
+		};
+		$scope.loadUser();
+
+        $scope.searchUser = function(){
+        	var keyword=$scope.keyword;
+			$http.get(urlAPI+'/user/search/'+keyword)
+			.then(
+				function(response) {
+					$scope.data = response.data;
+					$scope.loader = false;
+				},
+				function (response) {
+					var error="Error : " + response.data.error.text;
+					$scope.showErrorMessage(error,0);
+				});
+        };
+
+		$scope.showForm = function(action,id,index){
+			$scope.action = action;
+			if(action == 'add'){
+				$scope.formActionTitle="Tambah User";
+				$scope.emptyForm();
+                $('#formModal').modal('show');  // Show modal formModal
+            }else if(action == 'edit'){
+            	$scope.formActionTitle="Edit User";
+            	$scope.dataform.id = $scope.data[index]['id'];
+                $scope.dataform.nama = $scope.data[index]['nama'];
+                $scope.dataform.username = $scope.data[index]['username'];
+            	$scope.dataform.pass = $scope.data[index]['pass'];
+                $scope.dataform.level = $scope.data[index]['level'];
+                $('#formModal').modal('show');  // Show modal formModal
+            }
+        };
+
+        $scope.emptyForm = function(){
+        	$scope.dataform.id = '';
+        	$scope.dataform.menu = '';
+        	$scope.dataform.harga = '';
+        }
+
+        $scope.saveData = function(){
+        	if($scope.action=='add'){
+        		$scope.insertUser();
+        	}else{
+        		$scope.updateUser();
+        	}
+        }
+
+        $scope.insertUser = function(){
+        	if(confirm('Yakin simpan data ini ?')){
+        		$scope.kunciTombol = true;
+				var data = $.param({
+	                nama: $scope.dataform.nama,
+	                username: $scope.dataform.username,
+	                pass: $scope.dataform.pass,
+	                level: $scope.dataform.level
+	            });
+        		var config = {
+	                headers : {
+	                    'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'
+	                }
+	            }
+        		$http.post(urlAPI +'/user', data, config)
+        		.then(
+        			function(response){
+        				if(response){
+        					$scope.loadUser();
+        					$scope.emptyForm();
+                			$('#formModal').modal('hide');  // Hide modal formModal
+                			$scope.showSuccessMessage("Data Disimpan", 2000);
+                		}
+                		$scope.kunciTombol = false;
+                	},
+                	function (response) {
+                		var error="Error : " + response.data.error.text;
+                		$scope.showErrorMessage(error,0);
+                		$scope.kunciTombol = false;
+                	});
+        	}
+        };
+
+        $scope.updateUser = function(){
+        	if(confirm('Yakin edit data ini ?')){
+        		$scope.kunciTombol = true;
+        		var data = $.param({
+	                nama: $scope.dataform.nama,
+	                username: $scope.dataform.username,
+	                pass: $scope.dataform.pass,
+	                level: $scope.dataform.level
+	            });
+        		var config = {
+	                headers : {
+	                    'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'
+	                }
+	            }
+        		$http.put(urlAPI +'/user/'+ $scope.dataform.id, data, config)
+        		.then(
+        			function(response){
+        				if(response){
+        					$scope.loadUser();
+        					$scope.emptyForm();
+                			$('#formModal').modal('hide');  // Hide modal formModal
+                			$scope.showSuccessMessage("Data Diedit", 2000);
+                		}
+                		$scope.kunciTombol = false;
+                	},
+                	function (response) {
+                		var error="Error : " + response.data.error.text;
+                		$scope.showErrorMessage(error,0);
+                		$scope.kunciTombol = false;
+                	});
+        	}
+        };
+
+        $scope.deleteUser = function(id){
+        	if(confirm('Yakin hapus data ini ?')){
+        		$http.delete(urlAPI+'/user/delete/'+id)
+        		.then(
+        			function(response){
+        				$scope.loadUser();
+        				$scope.showSuccessMessage("Data Dihapus", 2000);
+        			},
+        			function (response) {
+        				var error="Error : " + response.data.error.text;
+        				$scope.showErrorMessage(error,0);
+        			});
+        	}
+        };
+
+        //========ANGULAR GROWL===========
+        $scope.showSuccessMessage = function(pesan, time) {
+        	growl.addSuccessMessage(pesan, {ttl:time});
+        }
+        $scope.showMessageInfo = function(pesan, time) {
+        	growl.addInfoMessage(pesan, {ttl:time});
+        }
+        $scope.showWarnMessage = function(pesan, time) {
+        	growl.addWarnMessage(pesan, {ttl:time});
+        }
+        $scope.showErrorMessage = function(pesan, time) {
+        	growl.addErrorMessage(pesan, {ttl:time});
+        }
+        //=================================
+
+    });
+
+</script>

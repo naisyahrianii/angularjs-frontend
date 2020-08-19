@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Latihan Slim Framework & Client AngularJS</title>
+	<script src="js/jquery-1.12.0.min.js"></script>
+	<link href="bootstrap-3.3.51/css/bootstrap.css" rel="stylesheet"/>
+	<script src="bootstrap-3.3.51/js/bootstrap.min.js"></script>
+	<!-- load angularjs -->
+	<script src="angular/angular.js"></script>
+
+	<!-- load angular-growl -->
+	<link href="angular-growl/growl.css" rel="stylesheet">
+	<script src="angular-growl/growl.js"></script>
+	<script src="angular-growl/growlDirective.js"></script>
+	<script src="angular-growl/growlFactory.js"></script>
+</head>
+
+<body>
+
+	<div class="container" data-ng-app="coffeeshopApp" data-ng-controller="coffeeshopCtrl">
+
+		<h1>Laporan Penjualan</h1>
+        <br/>
+        <div class="col-sm-12">
+			<input type="textSearch" style="float:right; width:300px;" class="form-control" placeholder="Pencarian (Bulan Pemesanan)" data-ng-keyup="searchPemesanan();" data-ng-model="keyword">
+		</div>
+		<div class="col-sm-12">
+			
+		</div>
+		<br/><br/>
+
+		<table class="table" cellspacing="0" width="100%">
+			<thead>
+				<tr>
+                    <!-- <th>No.</th> -->
+                    <th>Id</th>
+					<th>Pelanggan Id</th>
+                    <th>Menu Id</th>
+                    <th>Jumlah</th>
+                    <th>Subtotal</th>
+                    <th>Catatan</th>
+                    <!-- <th>Total Pemesanan</th> -->
+                    <th>order time</th>
+					
+				</tr>
+			</thead>
+			<tbody>
+				<tr data-ng-repeat="pemesanan in data">
+					<td>{{ pemesanan.id }}.</td>
+					<td>{{ pemesanan.pelangganid }}</td>
+                    <td>{{ pemesanan.menuid }}</td>
+                    <td>{{ pemesanan.jumlah }}</td>
+                    <td>{{ pemesanan.subtotal }}</td>
+                    <td>{{ pemesanan.catatan }}</td>
+                    <!-- <td>{{ pemesanan.total }}</td> -->
+                    <td>{{ pemesanan.orderat}}</td>
+					
+				</tr>
+			</tbody>
+		</table>
+
+
+		<!-- Loading Animation -->
+		<div class="row-fluid" data-ng-if="loader">
+			<div style="text-align: center"><img src="image/loader.gif"/></div>
+		</div>
+
+		<!-- Angular-Growl Message -->
+		<div growl></div>
+
+	</div>
+
+
+</body>
+</html>
+
+<script>
+	var urlAPI = 'http://192.168.64.2/coba-slim';
+
+	var coffeeshopApp = angular.module('coffeeshopApp', ['angular-growl']);
+
+	coffeeshopApp.controller('coffeeshopCtrl', function($scope, $http, growl) {
+		$scope.loader   = true;
+		$scope.form     = false;
+		$scope.dataform = {};
+
+		$scope.loadPemesanan = function(){
+			$http.get(urlAPI+'/pemesanan')
+			.then(
+				function(response) {
+					$scope.data = response.data;
+					$scope.loader = false;
+				},
+				function (response) {
+					var error="Error : " + response.data.error.text;
+					$scope.showErrorMessage(error,0);
+				});
+		};
+        $scope.loadPemesanan();
+        
+        $scope.searchPemesanan = function(){
+        	var keyword=$scope.keyword;
+			$http.get(urlAPI+'/pemesanan/search/'+keyword)
+			.then(
+				function(response) {
+					$scope.data = response.data;
+					$scope.loader = false;
+				},
+				function (response) {
+					var error="Error : " + response.data.error.text;
+					$scope.showErrorMessage(error,0);
+				});
+        };
+
+        //========ANGULAR GROWL===========
+        $scope.showSuccessMessage = function(pesan, time) {
+        	growl.addSuccessMessage(pesan, {ttl:time});
+        }
+        $scope.showMessageInfo = function(pesan, time) {
+        	growl.addInfoMessage(pesan, {ttl:time});
+        }
+        $scope.showWarnMessage = function(pesan, time) {
+        	growl.addWarnMessage(pesan, {ttl:time});
+        }
+        $scope.showErrorMessage = function(pesan, time) {
+        	growl.addErrorMessage(pesan, {ttl:time});
+        }
+        //=================================
+
+    });
+
+</script>
